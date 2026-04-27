@@ -54,7 +54,6 @@ class UserAdmin(BaseUserAdmin):
             {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
         ),
         ("Important dates", {"fields": ("last_login",)}),
-        ("Extra", {"fields": ("favorites",)}),
     )
     add_fieldsets = (
         (

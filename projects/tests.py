@@ -1,6 +1,6 @@
 from django.test import Client, TestCase
 
-from projects.models import Project
+from projects.models import Project, Skill
 from users.models import User
 
 
@@ -37,22 +37,44 @@ class ProjectsViewsTests(TestCase):
         self.assertEqual(project.owner, self.user)
         self.assertTrue(project.participants.filter(pk=self.user.pk).exists())
 
-    def test_toggle_favorite_requires_auth(self):
-        project = Project.objects.create(name="P1", owner=self.user)
-        response = self.client.post(f"/projects/{project.id}/toggle-favorite/")
-        self.assertEqual(response.status_code, 302)
+    def test_project_list_filters_by_skill_name(self):
+        python_skill = Skill.objects.create(name="Python")
+        js_skill = Skill.objects.create(name="JavaScript")
+        project_with_python = Project.objects.create(name="Backend", owner=self.user)
+        project_with_python.skills.add(python_skill)
+        project_with_js = Project.objects.create(name="Frontend", owner=self.user)
+        project_with_js.skills.add(js_skill)
 
-    def test_toggle_favorite_works_for_logged_in_user(self):
-        project = Project.objects.create(name="P2", owner=self.user)
-        self.client.force_login(self.user)
-        response = self.client.post(f"/projects/{project.id}/toggle-favorite/")
+        response = self.client.get("/projects/list/?skill=Python")
         self.assertEqual(response.status_code, 200)
-        self.user.refresh_from_db()
-        self.assertTrue(self.user.favorites.filter(pk=project.pk).exists())
+        self.assertIn(project_with_python, response.context["projects"])
+        self.assertNotIn(project_with_js, response.context["projects"])
+        self.assertEqual(response.context["active_skill"], "Python")
 
-    def test_favorites_page_available_only_for_owner(self):
-        response = self.client.get("/projects/favorites/")
-        self.assertEqual(response.status_code, 302)
-        self.client.force_login(self.user)
-        response = self.client.get("/projects/favorites/")
+    def test_skills_suggest_returns_up_to_10_ordered(self):
+        Skill.objects.create(name="Python")
+        Skill.objects.create(name="Pytest")
+        Skill.objects.create(name="Django")
+        response = self.client.get("/projects/skills/?q=Py")
         self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 2)
+        self.assertEqual([item["name"] for item in data], ["Pytest", "Python"])
+
+    def test_owner_can_add_and_remove_skill(self):
+        self.client.force_login(self.user)
+        project = Project.objects.create(name="Skill Project", owner=self.user)
+        response = self.client.post(
+            f"/projects/{project.id}/skills/add/",
+            data='{"name":"Django"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["created"])
+        self.assertTrue(payload["added"])
+        self.assertTrue(project.skills.filter(pk=payload["skill_id"]).exists())
+
+        response = self.client.post(f"/projects/{project.id}/skills/{payload['skill_id']}/remove/")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(project.skills.filter(pk=payload["skill_id"]).exists())

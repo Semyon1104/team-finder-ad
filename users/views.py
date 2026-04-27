@@ -65,23 +65,7 @@ def logout_view(request):
 
 
 def users_list_view(request):
-    participants = User.objects.all().order_by("-created_at")
-    active_filter = None
-
-    if request.user.is_authenticated:
-        active_filter = request.GET.get("filter")
-        if active_filter == "owners-of-favorite-projects":
-            participants = participants.filter(
-                owned_projects__interested_users=request.user
-            ).distinct()
-        elif active_filter == "owners-of-participating-projects":
-            participants = participants.filter(owned_projects__participants=request.user).distinct()
-        elif active_filter == "interested-in-my-projects":
-            participants = participants.filter(favorites__owner=request.user).distinct()
-        elif active_filter == "participants-of-my-projects":
-            participants = participants.filter(participated_projects__owner=request.user).exclude(
-                pk=request.user.pk
-            ).distinct()
+    participants = User.objects.all().order_by("id")
 
     paginator = Paginator(participants, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -92,7 +76,5 @@ def users_list_view(request):
         {
             "participants": page_obj.object_list,
             "page_obj": page_obj,
-            "active_filter": active_filter,
-            "active_skill": active_filter,
         },
     )

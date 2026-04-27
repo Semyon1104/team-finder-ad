@@ -42,11 +42,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=12, blank=True)
     github_url = models.URLField(blank=True)
     about = models.CharField(max_length=256, blank=True)
-    favorites = models.ManyToManyField(
-        "projects.Project",
-        blank=True,
-        related_name="interested_users",
-    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

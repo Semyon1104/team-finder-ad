@@ -2,6 +2,16 @@ from django.conf import settings
 from django.db import models
 
 
+class Skill(models.Model):
+    name = models.CharField(max_length=124, unique=True)
+
+    class Meta:
+        ordering = ("name",)
+
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
@@ -23,6 +33,7 @@ class Project(models.Model):
         related_name="participated_projects",
         blank=True,
     )
+    skills = models.ManyToManyField(Skill, related_name="projects", blank=True)
 
     class Meta:
         ordering = ("-created_at",)

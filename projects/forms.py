@@ -15,6 +15,21 @@ class ProjectForm(forms.ModelForm):
             "github_url": "GitHub",
             "status": "Статус",
         }
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Название проекта"}),
+            "description": forms.Textarea(attrs={"placeholder": "Описание проекта"}),
+            "github_url": forms.URLInput(attrs={"placeholder": "Ссылка на GitHub"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Оставляем значения open/closed (как в модели),
+        # но показываем пользователю русские подписи.
+        if "status" in self.fields:
+            self.fields["status"].choices = [
+                ("open", "Открыт"),
+                ("closed", "Закрыт"),
+            ]
 
     def clean_github_url(self):
         value = self.cleaned_data.get("github_url", "")
