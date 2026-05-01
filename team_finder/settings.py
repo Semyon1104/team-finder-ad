@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from decouple import config
-from django.urls import reverse_lazy
 
 from team_finder.constants import DEFAULT_ALLOWED_HOSTS
 
@@ -123,4 +122,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
-LOGIN_URL = reverse_lazy("users:login")
+LOGIN_URL = "users:login"

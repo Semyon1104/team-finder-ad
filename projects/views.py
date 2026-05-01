@@ -4,14 +4,12 @@ from http import HTTPStatus
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from projects.forms import ProjectForm
 from projects.models import Project, Skill
 from projects.services import get_projects_queryset
 from team_finder.constants import (
-    ITEMS_PER_PAGE,
     PROJECT_STATUS_CLOSED,
     PROJECT_STATUS_OPEN,
     SKILLS_SUGGEST_LIMIT,
@@ -28,7 +26,7 @@ def project_list_view(request):
         projects_qs = projects_qs.filter(skills__name=active_skill).distinct()
 
     projects_qs = projects_qs.order_by("-created_at")
-    page_obj = paginate_queryset(projects_qs, ITEMS_PER_PAGE, request.GET.get("page"))
+    page_obj = paginate_queryset(projects_qs, request)
     return render(
         request,
         "projects/project_list.html",
@@ -65,7 +63,7 @@ def project_form_view(request, project_id=None):
         project.save()
         if not is_edit:
             project.participants.add(request.user)
-        return redirect(reverse("projects:details", kwargs={"project_id": project.id}))
+        return redirect("projects:details", project_id=project.id)
 
     return render(
         request,

@@ -86,4 +86,5 @@ python manage.py test
 
 ## Автор
 
-Учебный проект команды TeamFinder.
+- [Semyon1104](https://github.com/Semyon1104)
+- Email: [sema_titov_04@mail.ru](mailto:sema_titov_04@mail.ru)

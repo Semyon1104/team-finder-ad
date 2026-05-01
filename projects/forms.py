@@ -1,7 +1,6 @@
 from django import forms
 
 from projects.models import Project
-from team_finder.constants import PROJECT_STATUS_CLOSED, PROJECT_STATUS_OPEN
 from team_finder.validators import validate_repository_url
 
 
@@ -23,13 +22,8 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Оставляем значения open/closed (как в модели),
-        # но показываем пользователю русские подписи.
         if "status" in self.fields:
-            self.fields["status"].choices = [
-                (PROJECT_STATUS_OPEN, "Открыт"),
-                (PROJECT_STATUS_CLOSED, "Закрыт"),
-            ]
+            self.fields["status"].choices = Project.STATUS_CHOICES
 
     def clean_github_url(self):
         return validate_repository_url(self.cleaned_data.get("github_url", ""))
