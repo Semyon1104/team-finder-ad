@@ -1,0 +1,29 @@
+{
+  "skills_pool": [
+    "Python",
+    "Django",
+    "PostgreSQL",
+    "Docker",
+    "REST API",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "HTML",
+    "CSS",
+    "Git",
+    "CI/CD",
+    "Figma",
+    "UX/UI",
+    "Kotlin",
+    "Swift",
+    "Go",
+    "Node.js",
+    "Redis",
+    "Celery"
+  ],
+  "demo_users": [
+    ["alex@example.com", "Alex", "Ivanov"],
+    ["maria@example.com", "Maria", "Petrova"],
+    ["oleg@example.com", "Oleg", "Sidorov"]
+  ]
+}

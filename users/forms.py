@@ -1,28 +1,10 @@
-from urllib.parse import urlparse
-
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordChangeForm
 
+from team_finder.validators import validate_repository_url
 from users.models import User
-
-
-def _normalize_phone(phone: str) -> str:
-    value = phone.strip()
-    if value.startswith("8") and len(value) == 11 and value[1:].isdigit():
-        return f"+7{value[1:]}"
-    if value.startswith("+7") and len(value) == 12 and value[2:].isdigit():
-        return value
-    raise forms.ValidationError("Телефон должен быть в формате 8XXXXXXXXXX или +7XXXXXXXXXX")
-
-
-def _validate_github_url(value: str) -> str:
-    if not value:
-        return value
-    parsed = urlparse(value)
-    if parsed.scheme not in {"http", "https"} or "github.com" not in parsed.netloc.lower():
-        raise forms.ValidationError("Ссылка должна вести на github.com")
-    return value
+from users.services import normalize_phone
 
 
 class RegisterForm(forms.ModelForm):
@@ -82,7 +64,7 @@ class ProfileEditForm(forms.ModelForm):
         phone = self.cleaned_data.get("phone", "")
         if not phone:
             return ""
-        normalized = _normalize_phone(phone)
+        normalized = normalize_phone(phone)
         qs = User.objects.filter(phone=normalized)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
@@ -91,7 +73,7 @@ class ProfileEditForm(forms.ModelForm):
         return normalized
 
     def clean_github_url(self):
-        return _validate_github_url(self.cleaned_data.get("github_url", ""))
+        return validate_repository_url(self.cleaned_data.get("github_url", ""))
 
 
 class UserPasswordChangeForm(PasswordChangeForm):

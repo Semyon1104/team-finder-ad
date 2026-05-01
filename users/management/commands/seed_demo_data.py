@@ -1,8 +1,11 @@
+import json
+import random
+from pathlib import Path
+
 from django.core.management.base import BaseCommand
 
-import random
-
 from projects.models import Project, Skill
+from team_finder.constants import PROJECT_STATUS_OPEN
 from users.models import User
 
 
@@ -10,39 +13,17 @@ class Command(BaseCommand):
     help = "Create demo users and one project for each user"
 
     def handle(self, *args, **options):
-        skills_pool = [
-            "Python",
-            "Django",
-            "PostgreSQL",
-            "Docker",
-            "REST API",
-            "JavaScript",
-            "TypeScript",
-            "React",
-            "HTML",
-            "CSS",
-            "Git",
-            "CI/CD",
-            "Figma",
-            "UX/UI",
-            "Kotlin",
-            "Swift",
-            "Go",
-            "Node.js",
-            "Redis",
-            "Celery",
-        ]
+        data_path = Path(__file__).with_name("seed_demo_data.json")
+        with data_path.open(encoding="utf-8") as fp:
+            seed_data = json.load(fp)
+
+        skills_pool = seed_data["skills_pool"]
+        demo_users = seed_data["demo_users"]
 
         skill_objs = {}
         for skill_name in skills_pool:
             skill, _ = Skill.objects.get_or_create(name=skill_name)
             skill_objs[skill_name] = skill
-
-        demo_users = [
-            ("alex@example.com", "Alex", "Ivanov"),
-            ("maria@example.com", "Maria", "Petrova"),
-            ("oleg@example.com", "Oleg", "Sidorov"),
-        ]
 
         created_count = 0
         for email, name, surname in demo_users:
@@ -60,12 +41,12 @@ class Command(BaseCommand):
                 user.save(update_fields=["password"])
                 created_count += 1
 
-            project, project_created = Project.objects.get_or_create(
+            project, _ = Project.objects.get_or_create(
                 name=f"{name}'s demo project",
                 owner=user,
                 defaults={
                     "description": "Demo project created for manual testing",
-                    "status": "open",
+                    "status": PROJECT_STATUS_OPEN,
                 },
             )
             if not project.participants.filter(pk=user.pk).exists():

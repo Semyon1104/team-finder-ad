@@ -1,31 +1,27 @@
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
+from team_finder.constants import ITEMS_PER_PAGE
+from team_finder.services import paginate_queryset
 from users.forms import LoginForm, ProfileEditForm, RegisterForm, UserPasswordChangeForm
 from users.models import User
 
 
 def register_view(request):
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("/users/login/")
-    else:
-        form = RegisterForm()
+    form = RegisterForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return redirect(reverse("users:login"))
     return render(request, "users/register.html", {"form": form})
 
 
 def login_view(request):
-    if request.method == "POST":
-        form = LoginForm(request, request.POST)
-        if form.is_valid():
-            login(request, form.user)
-            return redirect("/projects/list/")
-    else:
-        form = LoginForm(request)
+    form = LoginForm(request, request.POST or None)
+    if form.is_valid():
+        login(request, form.user)
+        return redirect(reverse("projects:list"))
     return render(request, "users/login.html", {"form": form})
 
 
@@ -36,39 +32,32 @@ def user_detail_view(request, user_id):
 
 @login_required
 def edit_profile_view(request):
-    if request.method == "POST":
-        form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect(f"/users/{request.user.id}/")
-    else:
-        form = ProfileEditForm(instance=request.user)
+    form = ProfileEditForm(request.POST or None, request.FILES or None, instance=request.user)
+    if form.is_valid():
+        form.save()
+        return redirect(reverse("users:details", kwargs={"user_id": request.user.id}))
     return render(request, "users/edit_profile.html", {"form": form, "user": request.user})
 
 
 @login_required
 def change_password_view(request):
-    if request.method == "POST":
-        form = UserPasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
-            return redirect(f"/users/{request.user.id}/")
-    else:
-        form = UserPasswordChangeForm(request.user)
+    form = UserPasswordChangeForm(request.user, request.POST or None)
+    if form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        return redirect(reverse("users:details", kwargs={"user_id": request.user.id}))
     return render(request, "users/change_password.html", {"form": form})
 
 
 def logout_view(request):
     logout(request)
-    return redirect("/projects/list/")
+    return redirect(reverse("projects:list"))
 
 
 def users_list_view(request):
-    participants = User.objects.all().order_by("id")
+    participants = User.objects.all().order_by("-created_at")
 
-    paginator = Paginator(participants, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
+    page_obj = paginate_queryset(participants, ITEMS_PER_PAGE, request.GET.get("page"))
 
     return render(
         request,

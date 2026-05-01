@@ -1,15 +1,24 @@
-from django.test import Client, TestCase
+from http import HTTPStatus
+
+from django.urls import reverse
+from django.test import TestCase
 
 from users.models import User
 
 
 class AuthViewsTests(TestCase):
-    def setUp(self):
-        self.client = Client()
+    @classmethod
+    def setUpTestData(cls):
+        cls.login_user = User.objects.create_user(
+            email="anna@example.com",
+            name="Anna",
+            surname="Petrova",
+            password="StrongPass123!",
+        )
 
     def test_register_redirects_to_login(self):
         response = self.client.post(
-            "/users/register/",
+            reverse("users:register"),
             data={
                 "name": "Ivan",
                 "surname": "Ivanov",
@@ -17,20 +26,14 @@ class AuthViewsTests(TestCase):
                 "password": "StrongPass123!",
             },
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, "/users/login/")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertRedirects(response, reverse("users:login"))
         self.assertTrue(User.objects.filter(email="ivan@example.com").exists())
 
     def test_login_by_email(self):
-        user = User.objects.create_user(
-            email="anna@example.com",
-            name="Anna",
-            surname="Petrova",
-            password="StrongPass123!",
-        )
         response = self.client.post(
-            "/users/login/",
-            data={"email": user.email, "password": "StrongPass123!"},
+            reverse("users:login"),
+            data={"email": self.login_user.email, "password": "StrongPass123!"},
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, "/projects/list/")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertRedirects(response, reverse("projects:list"))
